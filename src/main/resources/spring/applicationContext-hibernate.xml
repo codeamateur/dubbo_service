@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jpa="http://www.springframework.org/schema/data/jpa"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans
+	   http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+	   http://www.springframework.org/schema/tx
+	   http://www.springframework.org/schema/tx/spring-tx-4.1.xsd
+	   http://www.springframework.org/schema/aop
+	   http://www.springframework.org/schema/aop/spring-aop-4.1.xsd
+	   http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context-4.1.xsd
+       http://www.springframework.org/schema/data/jpa 
+       http://www.springframework.org/schema/data/jpa/spring-jpa-1.8.xsd"
+	default-lazy-init="true">
+
+	<description>spring hibernate配置信息</description>
+	<!-- 定义aspectj -->
+	<aop:aspectj-autoproxy proxy-target-class="true" />
+	<!-- 使用annotation定义事务 -->
+	<tx:annotation-driven transaction-manager="transactionManager"
+		proxy-target-class="true" mode="proxy" />
+	<!-- Spring Data Jpa配置, 扫描base-package下所有继承于Repository<T,ID>的接口 -->
+	<jpa:repositories base-package="cn.test.services.dao"
+		transaction-manager-ref="transactionManager"
+		entity-manager-factory-ref="entityManagerFactory" />
+	<!-- 配置事务管理器 -->
+	<bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+		<property name="entityManagerFactory" ref="entityManagerFactory" />
+	</bean>
+	<!-- Jpa Entity Manager 配置 -->
+	<bean id="entityManagerFactory"
+		class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="persistenceProvider" ref="persistenceProvider" />
+		<property name="jpaDialect" ref="jpaDialect" />
+		<property name="jpaVendorAdapter" ref="jpaVendorAdapter" />
+		<property name="packagesToScan" value="cn.test.services.entity" />
+		<property name="jpaProperties">
+			<props>
+				<!-- 设置数据库方言 -->
+				<prop key="hibernate.dialect">${hibernate.dialect}</prop>
+				<!-- 设置自动创建|更新|验证数据库表结构 -->
+				<prop key="hibernate.hbm2ddl.auto">${hibernate.hbm2ddl.auto}</prop>
+				<!-- 是否在控制台显示sql -->
+				<prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
+				<!-- 是否格式化sql，优化显示 -->
+				<prop key="hibernate.format_sql">${hibernate.format_sql}</prop>
+				<!-- 数据库批量查询最大数 -->
+				<prop key="hibernate.jdbc.fetch_size">${hibernate.jdbc.fetch_size}</prop>
+				<!-- 数据库批量更新、添加、删除操作最大数 -->
+				<prop key="hibernate.jdbc.batch_size">${hibernate.jdbc.batch_size}</prop>
+				<!-- 是否自动提交事务 -->
+				<prop key="hibernate.connection.autocommit">${hibernate.connection.autocommit}</prop>
+				<!-- 指定hibernate在何时释放JDBC连接 -->
+				<prop key="hibernate.connection.release_mode">${hibernate.connection.release_mode}</prop>
+				<!-- 创建session方式 hibernate4.x 的方式 -->
+				<prop key="hibernate.current_session_context_class">${hibernate.current_session_context_class}</prop>
+				<!-- javax.persistence.validation.mode默认情况下是auto的，就是说如果不设置的话它是会自动去你的classpath下面找一个bean-validation**包所以把它设置为none即可 -->
+				<prop key="javax.persistence.validation.mode">${javax.persistence.validation.mode}</prop>
+
+				<!-- 开启二级缓存 -->
+				<prop key="hibernate.cache.use_second_level_cache">${hibernate.cache.use_second_level_cache}</prop>
+				<!-- 开启查询的二级缓存 如果不需要就不设置 -->
+				<prop key="hibernate.cache.use_query_cache">${hibernate.cache.use_query_cache}</prop>
+				<!-- Hibernate4.0以上设置 -->
+				<prop key="hibernate.cache.region.factory_class">${hibernate.cache.region.factory_class}</prop>
+				<!-- 二级缓存 ehcache的配置文件位置 -->
+				<prop key="hibernate.cache.provider_configuration_file_resource_path">${hibernate.cache.provider_configuration_file_resource_path}
+				</prop>
+			</props>
+		</property>
+	</bean>
+	<!-- <bean class="org.hibernate.jpa.HibernatePersistenceProvider" /> -->
+	<bean id="persistenceProvider" class="org.hibernate.jpa.HibernatePersistenceProvider" />
+	<bean id="jpaDialect" class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />
+	<bean id="jpaVendorAdapter"
+		class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+		<property name="database" value="MYSQL"></property>
+	</bean>
+	<!-- 开发环境 -->
+	<beans profile="development">
+		<context:property-placeholder
+			ignore-resource-not-found="true"
+			location="classpath:application-development.properties" />
+		<bean id="dataSource" class="org.apache.tomcat.jdbc.pool.DataSource"
+			destroy-method="close">
+			<property name="driverClassName" value="${jdbc.driver}"></property>
+			<property name="url" value="${jdbc.url}" />
+			<property name="username" value="${jdbc.username}" />
+			<property name="password" value="${jdbc.password}" />
+			<property name="maxActive" value="${jdbc.pool.maxActive}" />
+			<property name="maxIdle" value="${jdbc.pool.maxIdle}" />
+			<property name="minIdle" value="0" />
+			<property name="maxWait" value="60000" />
+			<property name="defaultAutoCommit" value="false" />
+			<property name="testOnBorrow" value="true" />
+			<property name="testWhileIdle" value="true" />
+			<property name="validationQuery" value="select 1" />
+			<property name="removeAbandoned" value="true" />
+			<property name="minEvictableIdleTimeMillis" value="30000" />
+			<property name="timeBetweenEvictionRunsMillis" value="30000" />
+			<property name="removeAbandonedTimeout" value="60" />
+			<property name="validationQueryTimeout" value="20" />
+		</bean>
+	</beans>
+	<!-- 生产环境 -->
+	<beans profile="production">
+		<context:property-placeholder
+			ignore-resource-not-found="true"
+			location="classpath:application-development.properties" />
+
+		<bean id="dataSource" class="org.apache.tomcat.jdbc.pool.DataSource"
+			destroy-method="close">
+			<property name="driverClassName" value="${jdbc.driver}" />
+			<property name="url" value="${jdbc.url}" />
+			<property name="username" value="${jdbc.username}" />
+			<property name="password" value="${jdbc.password}" />
+			<property name="maxActive" value="${jdbc.pool.maxActive}" />
+			<property name="maxIdle" value="${jdbc.pool.maxIdle}" />
+			<property name="minIdle" value="0" />
+			<property name="maxWait" value="60000" />
+			<property name="defaultAutoCommit" value="false" />
+			<property name="testOnBorrow" value="true" />
+			<property name="testWhileIdle" value="true" />
+			<property name="validationQuery" value="select 1" />
+			<property name="removeAbandoned" value="true" />
+			<property name="minEvictableIdleTimeMillis" value="30000" />
+			<property name="timeBetweenEvictionRunsMillis" value="30000" />
+			<property name="removeAbandonedTimeout" value="60" />
+			<property name="validationQueryTimeout" value="20" />
+		</bean>
+	</beans>
+
+	<!--test环境 -->
+	<beans profile="functional">
+		<context:property-placeholder
+			ignore-resource-not-found="false"
+			location="classpath:application-functional.properties" />
+		<bean id="dataSource" class="org.apache.tomcat.jdbc.pool.DataSource"
+			destroy-method="close">
+			<property name="driverClassName" value="${jdbc.driver}" />
+			<property name="url" value="${jdbc.url}" />
+			<property name="username" value="${jdbc.username}" />
+			<property name="password" value="${jdbc.password}" />
+			<property name="maxActive" value="${jdbc.pool.maxActive}" />
+			<property name="maxIdle" value="${jdbc.pool.maxIdle}" />
+			<property name="minIdle" value="0" />
+			<property name="maxWait" value="60000" />
+			<property name="defaultAutoCommit" value="false" />
+			<property name="testOnBorrow" value="true" />
+			<property name="testWhileIdle" value="true" />
+			<property name="validationQuery" value="select 1" />
+			<property name="removeAbandoned" value="true" />
+			<property name="minEvictableIdleTimeMillis" value="30000" />
+			<property name="timeBetweenEvictionRunsMillis" value="30000" />
+			<property name="removeAbandonedTimeout" value="60" />
+			<property name="validationQueryTimeout" value="20" />
+		</bean>
+	</beans>	
+</beans>
